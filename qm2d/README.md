@@ -2,7 +2,7 @@
 
 Use the [split operator method](https://www.algorithm-archive.org/contents/split-operator_method/split-operator_method.html) to numerically solve quantum mechanics problems in 2D. To build and run this program, `cd` into the directory that contains this file and type and enter `odin run .`. By default, this opens the OpenGL and GLFW implementation. Invoke `./qm2d bmp` instead to use the CPU only implementation, where the simulation output is saved as BMP files.
 
-This is a re-implementation of an [older Rust project](https://github.com/marl0ny/Rust-Sims/qm2d_split_op).
+This is a re-implementation of an [older Rust project](https://github.com/marl0ny/Rust-Sims/tree/main/qm2d_split_op).
 
 ## References:
 
