@@ -4,13 +4,13 @@ References:
 
 Split-Operator Method:
 James Schloss. The Split Operator Method - Arcane Algorithm Archive.
-https://www.algorithm-archive.org/contents/split-operator_method/
- split-operator_method.html
+https://www.algorithm-archive.org/contents/split-operator_method/\
+split-operator_method.html
 */
 package main
 
 import "core:math"
-import "complex"
+import "core:math/cmplx"
 
 PDEType :: enum {
 	SCHRODINGER, KLEIN_GORDON
@@ -38,16 +38,13 @@ energy_free_periodic::proc(
 	}
 }
 
-propagate_kinetic::proc(psi_p: []complex.Complex, energies: []f32,
+propagate_kinetic::proc(psi_p: []complex64, energies: []f32,
 						w:u32, h: u32,
 						t: f32, hbar: f32 = 1.0) {
+	using cmplx
 	for i in 0..<h {
 		for j in 0..<w {
-			energy: f32 = energies[i*w + j]
-			psi_p[i*w + j] = complex.mul(
-				{math.cos(energy*t/hbar), -math.sin(energy*t/hbar)},
-				psi_p[i*w + j]
-			) 
+			psi_p[i*w + j] *= exp(-1i*complex64(energies[i*w + j]*t/hbar))
 		}
 	}
 }
@@ -67,14 +64,12 @@ propagate_kinetic::proc(psi_p: []complex.Complex, energies: []f32,
 // 	}
 // }
 
-propagate_spatial_scalar::proc(psi: []complex.Complex, potential: []f32,
+propagate_spatial_scalar::proc(psi: []complex64, potential: []f32,
 	                           w: u32, h: u32, t: f32, hbar: f32 = 1.0) {
+	using cmplx
 	for i in 0..<h {
 		for j in 0..<w {
-			phi: f32 = potential[i*w + j]
-			psi[i*w + j] = complex.mul(
-				{math.cos(phi*t/hbar), -math.sin(phi*t/hbar)}, psi[i*w + j]
-			)
+			psi[i*w + j] *= exp(-1i*complex64(potential[i*w + j]*t/hbar))
 		}
 	}
 }

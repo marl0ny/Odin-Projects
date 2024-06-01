@@ -17,16 +17,17 @@ package fft
 
 import "core:math"
 import "core:fmt"
-import "../quads"
+import "../gl_wrappers/quads"
+import "../gl_wrappers"
 import gl "vendor:OpenGL"
 
 @private
 Programs::struct {
     is_initialized: b32,
-    fft_iter: quads.glsl_program,
-    rev_bit_sort2: quads.glsl_program,
-    fftshift: quads.glsl_program,
-    copy: quads.glsl_program
+    fft_iter: gl_wrappers.glsl_program,
+    rev_bit_sort2: gl_wrappers.glsl_program,
+    fftshift: gl_wrappers.glsl_program,
+    copy: gl_wrappers.glsl_program
 }
 
 @private
@@ -150,7 +151,7 @@ fft2d::proc(dst: quads.Quad, src: quads.Quad) {
     init()
     width := dst.params.width
     height := dst.params.height
-    tex_params: quads.TextureParams = {
+    tex_params: gl_wrappers.TextureParams = {
         format=gl.RGBA32F,
         width=i32(width), height=i32(height),
         generate_mipmap=true,
@@ -176,7 +177,7 @@ ifft2d::proc(dst: quads.Quad, src: quads.Quad) {
     init()
     width := dst.params.width
     height := dst.params.height
-    tex_params: quads.TextureParams = {
+    tex_params: gl_wrappers.TextureParams = {
         format=gl.RGBA32F,
         width=i32(width), height=i32(height),
         generate_mipmap=true,

@@ -1,7 +1,8 @@
 package wavepacket
 
 import "core:math"
-import "../complex"
+import "core:math/cmplx"
+
 
 WavePacket ::struct {
 	a: f32,
@@ -11,7 +12,8 @@ WavePacket ::struct {
 }
 
 init_wave_packet_norm_coords::proc(
-	arr: []complex.Complex, w: u32, h: u32, wf: WavePacket) {
+	arr: []complex64, w: u32, h: u32, wf: WavePacket) {
+	using cmplx
 	for i in 0..<h {
 		for j in 0..<w {
 			x: f32 = f32(j)/f32(w)
@@ -21,8 +23,7 @@ init_wave_packet_norm_coords::proc(
 			abs_val := wf.a*math.exp(-0.5*xt*xt/(wf.sx*wf.sx)) \
 					       *math.exp(-0.5*yt*yt/(wf.sy*wf.sy))
 			nr: f32 = wf.nx*x + wf.ny*y
-			arr[i*w + j].x = abs_val*math.cos(2.0*math.PI*nr)
-			arr[i*w + j].y = abs_val*math.sin(2.0*math.PI*nr)
+			arr[i*w + j] = complex64(abs_val)*exp(2.0i*complex64(math.PI*nr))
 		}
 	}
 }

@@ -4,7 +4,7 @@ import "core:fmt"
 import "core:os"
 import "core:math"
 import "core:strings"
-import "complex"
+// import "core:math_cmplx"
 import "fft"
 import bmp "bitmap"
 import color "domain_coloring"
@@ -12,20 +12,20 @@ import wp "wavepacket"
 import "window"
 import glfw "vendor:glfw"
 import gl "vendor:OpenGL"
-import "quads"
+import "gl_wrappers"
+import "gl_wrappers/quads"
+import "gl_wrappers/volume_render"
 
-N : u32 : 1024
-psi := [N*N]complex.Complex {}
+N : u32 : 512 
+psi := [N*N]complex64 {}
 energies := [N*N]f32 {}
 potential := [N*N]f32 {}
 image_data: = [3*N*N]u8 {}
 
 
 glfw_implementation::proc() {
-	using complex
-
-	window_width: i32 = 1024
-	window_height: i32 = 1024
+	window_width: i32 = 1440 
+	window_height: i32 = 1440
 	window := window.init_window(window_width, window_height)
 	// window_width2, window_height2 : = glfw.GetFramebufferSize(window)
 
@@ -38,9 +38,9 @@ glfw_implementation::proc() {
 	copy_program := quads.make_program("./shaders/util/copy.frag")
 	wavepacket_program: \
 		= quads.make_program("./shaders/wavepacket/init.frag")
-	target_tex_params: quads.TextureParams = {}
+	target_tex_params: gl_wrappers.TextureParams = {}
 	target_quad := quads.new(target_tex_params)
-	tex_params2: quads.TextureParams = {
+	tex_params2: gl_wrappers.TextureParams = {
 		format=gl.RG32F,
 		width=i32(N), height=i32(N),
 		generate_mipmap=true,
@@ -54,9 +54,21 @@ glfw_implementation::proc() {
 		.DOUBLE_SLIT,
 		potential[0: N*N], w=N, h=N,
 		a=1.0,
-		x0=0.44, y0=0.4, x1=0.56, y1=0.42, s=0.02
+		x0=0.44, y0=0.4, x1=0.56, y1=0.42, s=0.02 // 102.4 ny
 	)
-	tex_params3: quads.TextureParams = {
+	// init_potential_norm_coords(
+	// 	.HARMONIC_OSCILLATOR,
+	// 	potential[0: N*N], w=N, h=N,
+	// 	a=20.0,
+	// 	// a=10.0, x0=0.5, y0=0.2, sx=0.05, sy=0.05, nx=90.0, ny=102.4
+	// )
+	// init_potential_norm_coords(
+	// 	.STEP,
+	// 	potential[0: N*N], w=N, h=N,
+	// 	a=1.0,
+	// 	// a=10.0, x0=0.5, y0=0.2, sx=0.05, sy=0.05, nx=90.0, ny=102.4
+	// )
+	tex_params3: gl_wrappers.TextureParams = {
 		format=gl.R32F,
 		width=i32(N), height=i32(N),
 		generate_mipmap=true,
@@ -69,7 +81,7 @@ glfw_implementation::proc() {
 	gl.Viewport(0, 0, i32(N), i32(N))
 	{
 		wp.init_wave_packet_gl(psi0, 
-			{a=10.0, x0=0.5, y0=0.2, sx=0.05, sy=0.05, nx=0.0, ny=40.0})
+			{a=3.0, x0=0.5, y0=0.2, sx=0.05, sy=0.05, nx=0.0, ny=80.0})
 	}
 
 	for {
@@ -77,7 +89,7 @@ glfw_implementation::proc() {
 		gl.Viewport(0, 0, i32(N), i32(N))
 		{
 			split_step(psi1, psi0, phi, 
-						{dt=Complex{0.8, 0.0}, m=1.0, hbar=1.0,
+						{dt=complex64(0.8), m=1.0, hbar=1.0,
 						 nx=i32(N), ny=i32(N)})
 			quads.swap(&psi0, &psi1)
 
@@ -101,7 +113,6 @@ glfw_implementation::proc() {
 }
 
 pure_cpu_bmp_output_implementation::proc() {
-	using complex;
 
 	energy_free_periodic(energies[0: N*N], N, N,
 					     // mass=1.0, c=137.026, 
@@ -109,7 +120,7 @@ pure_cpu_bmp_output_implementation::proc() {
 						)
 	wp.init_wave_packet_norm_coords(
 		psi[0: N*N], w=N, h=N, 
-		wf={60.0, 0.5, 0.25, 0.05, 0.05, 0.0, 50.0})
+		wf={60.0, 0.5, 0.25, 0.05, 0.05, 0.0, 80.0})
 	// init_potential_norm_coords(
 	// 	.HARMONIC_OSCILLATOR,
 	// 	potential[0: N*N], w=N, h=N, 
@@ -118,7 +129,7 @@ pure_cpu_bmp_output_implementation::proc() {
 	init_potential_norm_coords(
 		.DOUBLE_SLIT,
 		potential[0: N*N], w=N, h=N,
-		a=10.0,
+		a=1.0,
 		x0=0.43, y0=0.4, x1=0.57, y1=0.42, s=0.05
 	)
 

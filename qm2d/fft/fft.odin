@@ -17,8 +17,8 @@ package fft
 
 import "core:math"
 import "core:fmt"
-import "../complex"
 import "core:thread"
+import "core:math/cmplx"
 
 @(private)
 PI: f32: 3.141592653589793
@@ -28,10 +28,10 @@ INVSQRT2: f32: 0.7071067811865476
 
 
 @(private)
-transpose::proc(arr: [] complex.Complex, n: u32) {
+transpose::proc(arr: []complex64, n: u32) {
 	for i in 0..< n {
 		for j in i+1..<n {
-			tmp: complex.Complex = arr[i*n + j]
+			tmp: complex64 = arr[i*n + j]
 			arr[i*n + j] = arr[j*n + i]
 			arr[j*n + i] = tmp
 		}
@@ -39,8 +39,7 @@ transpose::proc(arr: [] complex.Complex, n: u32) {
 }
 
 @(private)
-reverse_bit_sort::proc(arr: [] complex.Complex, n: u32) {
-	using complex
+reverse_bit_sort::proc(arr: [] complex64, n: u32) {
 	u : u32
 	d : u32
 	rev : u32
@@ -54,9 +53,7 @@ reverse_bit_sort::proc(arr: [] complex.Complex, n: u32) {
 			d >>= 1
 		}
 		if rev >= i {
-			tmp: Complex = arr[i]
-			arr[i] = arr[rev]
-			arr[rev] = tmp
+			arr[i], arr[rev] = arr[rev], arr[i]
 		}
 	}
 }
@@ -79,22 +76,20 @@ https://websites.pmc.ucsc.edu/~fnimmo/eart290c_17/NumericalRecipesinF77.pdf
 
 */
 @(private)
-fft_in_place::proc(arr: []complex.Complex, n: u32, is_inverse: b32) {
-	using complex
+fft_in_place::proc(arr: []complex64, n: u32, is_inverse: b32) {
+	using cmplx
 	reverse_bit_sort(arr, n)
 	for block_size: u32 = 2; block_size <= n; block_size *= 2 {
+		sgn: f32 = 1.0 if is_inverse else -1.0
+		e1 := exp(1i*complex64(sgn*2.0*PI/f32(block_size)))
 		for j: u32 = 0; j < n; j += block_size {
+			e := complex64(1.0)
 			for i in 0..< block_size/2 {
-				sgn: f32 = 1.0 if is_inverse else -1.0
-				e := Complex {
-					math.cos(2.0*PI*f32(i)/f32(block_size)),
-					sgn*math.sin(2.0*PI*f32(i)/f32(block_size)),
-				}
-				even: Complex = arr[j + i]
-				odd: Complex = arr[j + i + block_size/2]
+				even, odd := arr[j + i], arr[j + i + block_size/2]
 				s: f32 = 1.0/f32(n) if is_inverse && block_size == n else 1.0
-				arr[j + i] = s*(even + mul(odd, e))
-				arr[j + i + block_size/2] = s*(even - mul(odd, e))
+				arr[j + i] = complex64(s)*(even + odd*e)
+				arr[j + i + block_size/2] = complex64(s)*(even - odd*e)
+				e *= e1
 			}
 		}
 	}
@@ -102,7 +97,7 @@ fft_in_place::proc(arr: []complex.Complex, n: u32, is_inverse: b32) {
 
 @(private)
 ThreadData::struct {
-	data: []complex.Complex,
+	data: []complex64,
 	row_count: u32,
 	row_size: u32,
 	is_inverse: b32,
@@ -116,7 +111,7 @@ must have a total size of n*n, n must be a power of two, and n must
 be divisible by th_total.
 */
 @(private)
-parallel_horizontal_square_fft::proc(arr: []complex.Complex,
+parallel_horizontal_square_fft::proc(arr: []complex64,
 									 n: u32, th_total: u32,
 									 is_inverse: b32) {
 
@@ -125,7 +120,7 @@ parallel_horizontal_square_fft::proc(arr: []complex.Complex,
 		// look at the second example for the Transmute operator
 		// from here: https://odin-lang.org/docs/overview/
 		thread_data: ThreadData = (^ThreadData)(t.data)^
-		data: []complex.Complex = thread_data.data
+		data: []complex64 = thread_data.data
 		row_count: u32 = thread_data.row_count
 		row_size: u32 = thread_data.row_size
 		is_inverse: b32 = thread_data.is_inverse
@@ -171,7 +166,7 @@ parallel_horizontal_square_fft::proc(arr: []complex.Complex,
 	}
 }
 
-parallel_square_fft::proc(arr: []complex.Complex,
+parallel_square_fft::proc(arr: []complex64,
 					      n: u32, th_total: u32,
 						  is_inverse: b32) {
 	parallel_horizontal_square_fft(arr, n, th_total, is_inverse)

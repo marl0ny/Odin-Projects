@@ -5,22 +5,22 @@ References:
 
 Split-Operator Method:
 James Schloss. The Split Operator Method - Arcane Algorithm Archive.
-https://www.algorithm-archive.org/contents/split-operator_method/
- split-operator_method.html
+https://www.algorithm-archive.org/contents/split-operator_method/\
+split-operator_method.html
 */
 package main
 
 import "core:math"
-import "quads"
+import "gl_wrappers"
+import "gl_wrappers/quads"
 import "fft"
-import "complex"
 
 
 @(private="file")
 Programs::struct {
     is_initialized: b32,
-    splitstep_momentum: quads.glsl_program,
-    splitstep_spatial: quads.glsl_program,
+    splitstep_momentum: gl_wrappers.glsl_program,
+    splitstep_spatial: gl_wrappers.glsl_program,
 }
 
 @(private="file")
@@ -40,7 +40,7 @@ init_programs::proc () {
 }
 
 SimParams::struct {
-    dt: complex.Complex,
+    dt: complex64,
     m: f32,
     hbar: f32,
     nx: i32,
@@ -50,14 +50,14 @@ SimParams::struct {
 split_step::proc(psi1: quads.Quad, 
                  psi0: quads.Quad, 
                  phi: quads.Quad, sim_params: SimParams) {
-    using complex
+    using gl_wrappers
     init_programs()
-    dt: Complex = sim_params.dt
+    dt: complex64 = sim_params.dt
     m, hbar :f32 = sim_params.m, sim_params.hbar
     nx, ny: i32 = sim_params.nx, sim_params.ny
     quads.draw(
         psi1, s_programs.splitstep_spatial,
-        {"dt"=quads.Vec2(dt/2.0), "m"=m, "hbar"=hbar,
+        {"dt"=Vec2(transmute([2]f32)(dt/2.0)), "m"=m, "hbar"=hbar,
          "potentialTex"=phi,
          "psiTex"=psi0}
     )
@@ -65,16 +65,16 @@ split_step::proc(psi1: quads.Quad,
     quads.draw(
         psi1, s_programs.splitstep_momentum,
         {"numberOfDimensions"=2,
-         "texelDimensions2D"=quads.IVec2{nx, ny},
-         "dimensions2D"=quads.Vec2{f32(nx), f32(ny)},
-         "dt"=quads.Vec2(dt),
+         "texelDimensions2D"=IVec2{nx, ny},
+         "dimensions2D"=Vec2{f32(nx), f32(ny)},
+         "dt"=Vec2(transmute([2]f32)dt),
          "m"=m, "hbar"=hbar,
          "psiTex"=psi0}
     )
     fft.ifft2d(psi0, psi1)
     quads.draw(
         psi1, s_programs.splitstep_spatial,
-        {"dt"=quads.Vec2(dt/2.0), "m"=m, "hbar"=hbar,
+        {"dt"=Vec2(transmute([2]f32)(dt/2.0)), "m"=m, "hbar"=hbar,
          "potentialTex"=phi,
          "psiTex"=psi0}
     )
